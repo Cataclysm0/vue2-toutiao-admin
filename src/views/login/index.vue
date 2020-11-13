@@ -1,14 +1,19 @@
 <template>
   <div class="login-container">
-    <el-form class="login-form" ref="form" :model="user">
+    <el-form
+      class="login-form"
+      ref="loginForm"
+      :model="user"
+      :rules="formRules"
+    >
       <el-form-item>
         <div class="login-head"></div>
       </el-form-item>
-      <el-form-item>
+      <el-form-item prop="mobile">
         <el-input v-model="user.mobile" placeholder="请输入手机号"></el-input>
       </el-form-item>
-      <el-form-item>
-        <el-input v-model="user.code" placeholder="请输入验证码">></el-input>
+      <el-form-item prop="code">
+        <el-input v-model="user.code" placeholder="请输入验证码"></el-input>
       </el-form-item>
       <el-form-item>
         <el-checkbox v-model="checked">
@@ -39,7 +44,25 @@ export default {
         code: ""
       },
       checked: false,
-      loginLoading: false
+      loginLoading: false,
+      formRules: {
+        mobile: [
+          { required: true, message: "请输入手机号", trigger: "blur" },
+          {
+            pattern: /^1[3|5|7|8|9]\d{9}$/,
+            message: "请输入正确的手机号",
+            trigger: "blur"
+          }
+        ],
+        code: [
+          { required: true, message: "验证码不能为空", trigger: "blur" },
+          {
+            pattern: /^\d{6}$/,
+            message: "验证码格式错误",
+            trigger: "blur"
+          }
+        ]
+      }
     };
   },
   methods: {
@@ -47,6 +70,14 @@ export default {
       // 获取表单数据
       const user = this.user;
       // 表单验证
+      this.$refs["loginForm"].validate(valid => {
+        if (!valid) {
+          return;
+        }
+        this.login(user);
+      });
+    },
+    login(user) {
       this.loginLoading = true;
       request({
         method: "POST",
