@@ -15,8 +15,8 @@
       <el-form-item prop="code">
         <el-input v-model="user.code" placeholder="请输入验证码"></el-input>
       </el-form-item>
-      <el-form-item>
-        <el-checkbox v-model="checked">
+      <el-form-item prop="isAgree">
+        <el-checkbox v-model="user.isAgree">
           我已阅读并同意用户协议和隐私条款
         </el-checkbox>
       </el-form-item>
@@ -34,16 +34,16 @@
 </template>
 
 <script>
-import request from "@/utils/request.js";
+import { login } from "@/api/user.js";
 export default {
   name: "LoginIndex",
   data() {
     return {
       user: {
         mobile: "",
-        code: ""
+        code: "",
+        isAgree: false
       },
-      checked: false,
       loginLoading: false,
       formRules: {
         mobile: [
@@ -60,6 +60,20 @@ export default {
             pattern: /^\d{6}$/,
             message: "验证码格式错误",
             trigger: "blur"
+          }
+        ],
+        isAgree: [
+          {
+            validator: (rule, value, callback) => {
+              if (!value) {
+                return callback(new Error("请勾选同意用户协议"));
+              }
+              setTimeout(() => {
+                callback();
+              }, 1000);
+            },
+            // message: "请勾选同意用户协议",
+            trigger: "change"
           }
         ]
       }
@@ -79,23 +93,24 @@ export default {
     },
     login(user) {
       this.loginLoading = true;
-      request({
-        method: "POST",
-        url: "/mp/v1_0/authorizations",
-        data: user
-      })
+      login(user)
         .then(res => {
           this.$message({
             message: "登录成功",
             type: "success"
           });
           this.loginLoading = false;
-          console.log(res);
+          // 将接口返回的用户相关数据放到本地存储
+          // 本地存储只能存储字符串
+          // 对象、数组可转为json
+          window.localStorage.setItem("user", JSON.stringify(res.data.data));
+          this.$router.push({
+            name: "home"
+          });
         })
-        .catch(err => {
+        .catch(() => {
           this.$message.error("手机号或验证码错误");
           this.loginLoading = false;
-          console.log("登录失败", err);
         });
       // 验证通过，提交登录
       // 处理响应结果
